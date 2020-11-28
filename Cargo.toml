@@ -1,2 +1,3 @@
 [workspace]
-members = ["search-shortcuts", "server"]
+members = ["search-shortcuts", "server", "worker"]
+
