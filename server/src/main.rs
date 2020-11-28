@@ -1,7 +1,7 @@
 mod errors;
 use errors::{Error, Result};
 
-use actix_web::middleware::Compress;
+use actix_web::middleware::{Compress, Logger};
 use actix_web::web::Query;
 use actix_web::{get, App, HttpResponse, HttpServer};
 use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslFiletype, SslMethod};
@@ -88,6 +88,7 @@ async fn main() -> Result<()> {
 
     HttpServer::new(|| {
         App::new()
+            .wrap(Logger::new(r#"%s %b "%{User-Agent}i" %T"#))
             .wrap(Compress::default())
             .service(index)
             .service(osdf)
