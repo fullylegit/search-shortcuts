@@ -1,2 +1,2 @@
 [workspace]
-members = ["lib"]
+members = ["search-shortcuts", "server"]
