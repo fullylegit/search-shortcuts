@@ -16,6 +16,4 @@ pub(crate) enum Error {
     Tls(&'static str),
 }
 
-impl actix_web::ResponseError for Error {
-
-}
+impl actix_web::ResponseError for Error {}
