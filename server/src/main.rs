@@ -1,9 +1,10 @@
 mod errors;
 use errors::{Error, Result};
 
-use actix_web::middleware::{Compress, Logger};
+use actix_web::middleware::{Compress, DefaultHeaders, Logger};
 use actix_web::web::Query;
 use actix_web::{get, App, HttpResponse, HttpServer};
+use itertools::Itertools;
 use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslFiletype, SslMethod};
 use search_shortcuts::query_to_url;
 use serde::Deserialize;
@@ -67,6 +68,60 @@ fn setup_ssl() -> Result<SslAcceptorBuilder> {
     Ok(builder)
 }
 
+fn default_headers() -> DefaultHeaders {
+    let features = [
+        "accelerometer",
+        "ambient-light-sensor",
+        "autoplay",
+        "battery",
+        "camera",
+        "display-capture",
+        "document-domain",
+        "encrypted-media",
+        "execution-while-not-rendered",
+        "execution-while-out-of-viewport",
+        "fullscreen",
+        "geolocation",
+        "gyroscope",
+        "layout-animations",
+        "legacy-image-formats",
+        "magnetometer",
+        "microphone",
+        "midi",
+        "navigation-override",
+        "oversized-images",
+        "payment",
+        "picture-in-picture",
+        "publickey-credentials-get",
+        "sync-xhr",
+        "usb",
+        "vr",
+        "wake-lock",
+        "screen-wake-lock",
+        "web-share",
+        "xr-spatial-tracking",
+    ];
+    let disabled_features = features
+        .iter()
+        .map(|feature| format!("{} 'none'", feature))
+        .join("; ");
+
+    DefaultHeaders::new()
+        .header("Referrer-Policy", "no-referrer")
+        .header("X-XSS-Protection", "1; mode=block")
+        .header("X-Frame-Options", "DENY")
+        .header("X-Content-Type-Options", "nosniff")
+        .header("Feature-Policy", disabled_features)
+        .header("Content-Security-Policy", "default-src 'self'")
+        .header("Cross-Origin-Embedder-Policy", "require-corp")
+        .header("Cross-Origin-Resource-Policy", "same-origin")
+        .header("Cross-Origin-Opener-Policy", "same-origin")
+        .header(
+            "Strict-Transport-Security",
+            "max-age=63072000; includeSubDomains; preload ",
+        )
+}
+
 fn init_logging() {
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "info");
@@ -90,6 +145,7 @@ async fn main() -> Result<()> {
         App::new()
             .wrap(Logger::new(r#"%s %b "%{User-Agent}i" %T"#))
             .wrap(Compress::default())
+            .wrap(default_headers())
             .service(index)
             .service(osdf)
     })

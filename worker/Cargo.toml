@@ -31,6 +31,7 @@ serde = { version = "1.0.117", features = ["derive"] }
 serde_qs = "0.7.0"
 search-shortcuts = { path = "../search-shortcuts/" }
 wasm-bindgen-futures = "0.4.18"
+itertools = "0.9.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.18"
