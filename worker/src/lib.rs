@@ -75,7 +75,9 @@ struct Args {
 
 fn osdf() -> Response {
     let headers = default_headers().unwrap();
-    headers.set("Content-Type", "text/xml").unwrap();
+    headers
+        .set("Content-Type", "application/opensearchdescription+xml")
+        .unwrap();
     Response::new_with_opt_str_and_init(
         Some(include_str!("../../resources/osdf.xml")),
         ResponseInit::new().status(200).headers(&headers),

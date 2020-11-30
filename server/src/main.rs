@@ -33,7 +33,7 @@ async fn index(args: Query<Args>) -> Result<HttpResponse> {
 #[get("/osdf.xml")]
 async fn osdf() -> HttpResponse {
     HttpResponse::Ok()
-        .content_type("text/xml")
+        .content_type("application/opensearchdescription+xml")
         .body(include_str!("../../resources/osdf.xml"))
 }
 
