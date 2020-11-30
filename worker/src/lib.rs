@@ -13,6 +13,8 @@ use web_sys::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+type Result<T, E = JsValue> = std::result::Result<T, E>;
+
 fn default_headers() -> Result<Headers, JsValue> {
     let features = [
         "accelerometer",
@@ -73,49 +75,47 @@ struct Args {
     q: Option<String>,
 }
 
-fn osdf() -> Response {
-    let headers = default_headers().unwrap();
-    headers
-        .set("Content-Type", "application/opensearchdescription+xml")
-        .unwrap();
-    Response::new_with_opt_str_and_init(
+fn osdf() -> Result<Response> {
+    let headers = default_headers()?;
+    headers.set("Content-Type", "application/opensearchdescription+xml")?;
+    Ok(Response::new_with_opt_str_and_init(
         Some(include_str!("../../resources/osdf.xml")),
         ResponseInit::new().status(200).headers(&headers),
-    )
-    .unwrap()
+    )?)
 }
 
-fn index() -> Response {
-    let headers = default_headers().unwrap();
-    headers.set("Content-Type", "text/html").unwrap();
-    Response::new_with_opt_str_and_init(
+fn index() -> Result<Response> {
+    let headers = default_headers()?;
+    headers.set("Content-Type", "text/html")?;
+    Ok(Response::new_with_opt_str_and_init(
         Some(include_str!("../../resources/index.html")),
         ResponseInit::new().status(200).headers(&headers),
-    )
-    .unwrap()
+    )?)
 }
 
-fn redirect(query: &str) -> Response {
-    let args: Args = serde_qs::from_str(query).unwrap();
+fn redirect(query: &str) -> Result<Response> {
+    let args: Args = serde_qs::from_str(query)
+        .map_err(|err| format!("Failed to parse query string: {:?}", err))?;
     match args.q {
         Some(query) => {
-            let headers = default_headers().unwrap();
-            let redirect_url = query_to_url(&query).unwrap();
-            headers.set("Location", redirect_url.as_str()).unwrap();
-            return Response::new_with_opt_str_and_init(
+            let headers = default_headers()?;
+            let redirect_url = query_to_url(&query)
+                .map_err(|err| format!("Failed to get redirect url: {:?}", err))?;
+            headers.set("Location", redirect_url.as_str())?;
+            return Ok(Response::new_with_opt_str_and_init(
                 None,
                 ResponseInit::new().status(303).headers(&headers),
-            )
-            .unwrap();
+            )?);
         }
         None => index(),
     }
 }
 
 #[wasm_bindgen]
-pub async fn handle_request(request: Request) -> Response {
+pub async fn handle_request(request: Request) -> Result<Response> {
     utils::set_panic_hook();
-    let url = Url::parse(&request.url()).unwrap();
+    let url = Url::parse(&request.url())
+        .map_err(|err| format!("Failed to parse request url: {:?}", err))?;
 
     match url.path() {
         "/" => match url.query() {
@@ -123,12 +123,12 @@ pub async fn handle_request(request: Request) -> Response {
             None => index(),
         },
         "/osdf.xml" => osdf(),
-        _ => Response::new_with_opt_str_and_init(
-            None,
-            ResponseInit::new()
-                .status(404)
-                .headers(&default_headers().unwrap()),
-        )
-        .unwrap(),
+        _ => {
+            let headers = default_headers()?;
+            Response::new_with_opt_str_and_init(
+                None,
+                ResponseInit::new().status(404).headers(&headers),
+            )
+        }
     }
 }
