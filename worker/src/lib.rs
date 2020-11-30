@@ -63,7 +63,7 @@ fn default_headers() -> Result<Headers, JsValue> {
         "max-age=63072000; includeSubDomains; preload ",
     )?;
     headers.set("Cross-Origin-Embedder-Policy", "require-corp")?;
-    headers.set("Cross-Origin-Resource-Policy", "same-origin")?;
+    headers.set("Cross-Origin-Resource-Policy", "cross-origin")?;
     headers.set("Cross-Origin-Opener-Policy", "same-origin")?;
     Ok(headers)
 }

@@ -114,7 +114,7 @@ fn default_headers() -> DefaultHeaders {
         .header("Feature-Policy", disabled_features)
         .header("Content-Security-Policy", "default-src 'self'")
         .header("Cross-Origin-Embedder-Policy", "require-corp")
-        .header("Cross-Origin-Resource-Policy", "same-origin")
+        .header("Cross-Origin-Resource-Policy", "cross-origin")
         .header("Cross-Origin-Opener-Policy", "same-origin")
         .header(
             "Strict-Transport-Security",
