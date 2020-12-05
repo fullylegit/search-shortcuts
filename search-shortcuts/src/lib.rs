@@ -13,6 +13,7 @@ fn handle_static_redirects(query: &str) -> Result<Option<Url>> {
         "sth" => Url::parse("https://www.servethehome.com")?.into(),
         "x" => Url::parse("https://xkcd.com")?.into(),
         "weather" => Url::parse("https://weather.bom.gov.au/location/r3dp390-canberra")?.into(),
+        "gh" => Url::parse("https://github.com")?.into(),
         _ => None,
     })
 }
@@ -262,6 +263,7 @@ mod tests {
                 "https://weather.bom.gov.au/location/r3dp390-canberra",
                 "weather",
             ),
+            ("https://github.com/", "gh"),
         ];
         run_tests(&tests)
     }
