@@ -14,6 +14,7 @@ fn handle_static_redirects(query: &str) -> Result<Option<Url>> {
         "x" => Url::parse("https://xkcd.com")?.into(),
         "weather" => Url::parse("https://weather.bom.gov.au/location/r3dp390-canberra")?.into(),
         "gh" => Url::parse("https://github.com")?.into(),
+        "bfio" => Url::parse("https://bushfire.io")?.into(),
         _ => None,
     })
 }
@@ -264,6 +265,7 @@ mod tests {
                 "weather",
             ),
             ("https://github.com/", "gh"),
+            ("https://bushfire.io/", "bfio"),
         ];
         run_tests(&tests)
     }
