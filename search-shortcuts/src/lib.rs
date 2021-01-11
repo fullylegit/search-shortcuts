@@ -121,6 +121,13 @@ fn handle_crates(query: &str) -> Result<Url> {
     )?)
 }
 
+fn handle_auspost(query: &str) -> Result<Url> {
+    Ok(Url::parse(&format!(
+        "https://auspost.com.au/mypost/track/#/details/{}",
+        query
+    ))?)
+}
+
 pub fn query_to_url(query: &str) -> Result<Url> {
     if let Some(url) = handle_static_redirects(query)? {
         return Ok(url);
@@ -145,6 +152,9 @@ pub fn query_to_url(query: &str) -> Result<Url> {
     }
     if let Some(query) = query.strip_prefix("crates ") {
         return Ok(handle_crates(query)?);
+    }
+    if let Some(query) = query.strip_prefix("ap ") {
+        return Ok(handle_auspost(query)?);
     }
     Ok(Url::parse_with_params(
         "https://duckduckgo.com/?k1=-1",
@@ -311,6 +321,15 @@ mod tests {
                 "crates lol/donkey",
             ),
         ];
+        run_tests(&tests)
+    }
+
+    #[test]
+    fn test_auspost_tracking() -> Result<()> {
+        let tests = [(
+            "https://auspost.com.au/mypost/track/#/details/ABC123",
+            "ap ABC123",
+        )];
         run_tests(&tests)
     }
 }
