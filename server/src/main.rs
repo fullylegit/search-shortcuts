@@ -83,6 +83,7 @@ fn default_headers() -> DefaultHeaders {
         "fullscreen",
         "geolocation",
         "gyroscope",
+        "interest-cohort",
         "layout-animations",
         "legacy-image-formats",
         "magnetometer",
@@ -112,6 +113,7 @@ fn default_headers() -> DefaultHeaders {
         .header("X-Frame-Options", "DENY")
         .header("X-Content-Type-Options", "nosniff")
         .header("Feature-Policy", disabled_features)
+        .header("Permissions-Policy", disabled_features)
         .header("Content-Security-Policy", "default-src 'self'")
         .header("Cross-Origin-Embedder-Policy", "require-corp")
         .header("Cross-Origin-Resource-Policy", "cross-origin")

@@ -30,6 +30,7 @@ fn default_headers() -> Result<Headers, JsValue> {
         "fullscreen",
         "geolocation",
         "gyroscope",
+        "interest-cohort",
         "layout-animations",
         "legacy-image-formats",
         "magnetometer",
@@ -59,6 +60,7 @@ fn default_headers() -> Result<Headers, JsValue> {
     headers.set("X-Frame-Options", "DENY")?;
     headers.set("X-Content-Type-Options", "nosniff")?;
     headers.set("Feature-Policy", &disabled_features)?;
+    headers.set("Permissions-Policy", &disabled_features)?;
     headers.set("Content-Security-Policy", "default-src 'self'")?;
     headers.set(
         "Strict-Transport-Security",
