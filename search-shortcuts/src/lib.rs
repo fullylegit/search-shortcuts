@@ -177,189 +177,63 @@ pub fn query_to_url(query: &str) -> Result<Url> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use test_case::test_case;
 
-    fn run_tests(tests: &[(&str, &str)]) -> Result<()> {
-        for (expected, query) in tests.iter() {
-            let actual = query_to_url(query)?;
-            assert_eq!(*expected, actual.as_str(), "query: {:?}", query);
-        }
+    #[test_case("https://github.com/fullylegit", "gh @fullylegit")]
+    #[test_case("https://github.com/fullylegit/ja3", "gh fullylegit/ja3")]
+    #[test_case("https://github.com/search?q=test", "gh test")]
+    #[test_case("https://github.com/rust-lang/rust/issues/1", "gh rust-lang/rust #1")]
+    #[test_case("https://github.com/rust-lang/rust/pull/168", "gh rust-lang/rust !168")]
+    #[test_case(
+        "https://hub.docker.com/r/nvidia/k8s-device-plugin",
+        "dh nvidia/k8s-device-plugin"
+    )]
+    #[test_case(
+        "https://hub.docker.com/r/nvidia/k8s-device-plugin",
+        "dh r/nvidia/k8s-device-plugin"
+    )]
+    #[test_case("https://hub.docker.com/search?q=test", "dh test")]
+    #[test_case("https://weather.bom.gov.au/location/r3dp390-canberra", "weather")]
+    #[test_case("https://en.wikipedia.org/wiki/Special:Search?search=test", "w test")]
+    #[test_case(
+        "https://en.wikipedia.org/wiki/Special:Search?search=test%2Flol",
+        "w test/lol"
+    )]
+    #[test_case("https://stackoverflow.com/search?q=lol+donkey", "so lol donkey")]
+    #[test_case("https://stackoverflow.com/search?q=lol%2Fdonkey", "so lol/donkey")]
+    #[test_case("https://crates.io/search?q=lol%2Fdonkey", "crates lol/donkey")]
+    #[test_case("https://auspost.com.au/mypost/track/#/details/ABC123", "ap ABC123")]
+    #[test_case("https://hub.docker.com/_/nginx", "dh /nginx" ; "docker hub 1")]
+    #[test_case("https://hub.docker.com/_/nginx", "dh _/nginx" ; "docker hub 2")]
+    #[test_case("https://hub.docker.com/_/nginx", "dh r/nginx" ; "docker hub 3")]
+    #[test_case("https://docs.rs/actix-web/", "docs actix-web" ; "docs.rs 1")]
+    #[test_case("https://docs.rs/actix-web/", "docs/actix-web" ; "docs.rs 2")]
+    #[test_case("https://docs.rs/actix-web/3.3.0", "docs actix-web/3.3.0" ; "docs.rs 3")]
+    #[test_case("https://docs.rs/actix-web/3.3.0", "docs/actix-web/3.3.0" ; "docs.rs 4")]
+    #[test_case("https://docs.rs/actix-web/3.3.0", "docs actix-web@3.3.0" ; "docs.rs 5")]
+    #[test_case("https://docs.rs/actix-web/3.3.0", "docs/actix-web@3.3.0" ; "docs.rs 6")]
+    // this is already handled by docs.rs but doing it here removes
+    // an additional redirect
+    #[test_case("https://doc.rust-lang.org/stable/std/", "docs std" ; "docs.rs 7")]
+    #[test_case("https://doc.rust-lang.org/stable/std/", "docs/std" ; "docs.rs 8")]
+    #[test_case("https://duckduckgo.com/?k1=-1&q=search", "search")]
+    #[test_case("https://duckduckgo.com/?k1=-1&q=lol+donkey", "lol donkey")]
+    #[test_case("https://duckduckgo.com/?k1=-1&q=lol%2Fdonkey", "lol/donkey")]
+    #[test_case("https://this-week-in-rust.org/", "twir")]
+    #[test_case("https://www.abc.net.au/news", "abc")]
+    #[test_case("https://hackaday.com/blog/", "had")]
+    #[test_case("https://slashdot.org/", "sd")]
+    #[test_case("https://slashdot.org/", "/.")]
+    #[test_case("https://www.servethehome.com/", "sth")]
+    #[test_case("https://xkcd.com/", "x")]
+    #[test_case("https://github.com/", "gh")]
+    #[test_case("https://bushfire.io/", "bfio")]
+    #[test_case("https://stackoverflow.com/search?q=search", "so search")]
+    #[test_case("https://crates.io/search?q=search", "crates search")]
+    #[test_case("https://crates.io/search?q=lol+donkey", "crates lol donkey")]
+    fn run_tests(expected: &str, query: &str) -> Result<()> {
+        let actual = query_to_url(query)?;
+        assert_eq!(expected, actual.as_str(), "query: {:?}", query);
         Ok(())
-    }
-
-    #[test]
-    fn test_github_user() -> Result<()> {
-        let tests = [
-            ("https://github.com/fullylegit", "gh @fullylegit"),
-            ("https://github.com/fullylegit", "gh u/fullylegit"),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_github_repo() -> Result<()> {
-        let tests = [("https://github.com/fullylegit/ja3", "gh fullylegit/ja3")];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_github_search() -> Result<()> {
-        let tests = [("https://github.com/search?q=test", "gh test")];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_github_issue() -> Result<()> {
-        let tests = [(
-            "https://github.com/rust-lang/rust/issues/1",
-            "gh rust-lang/rust #1",
-        )];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_github_pr() -> Result<()> {
-        let tests = [(
-            "https://github.com/rust-lang/rust/pull/168",
-            "gh rust-lang/rust !168",
-        )];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_docker_hub_repo() -> Result<()> {
-        let tests = [
-            ("https://hub.docker.com/_/nginx", "dh /nginx"),
-            ("https://hub.docker.com/_/nginx", "dh _/nginx"),
-            ("https://hub.docker.com/_/nginx", "dh r/nginx"),
-            (
-                "https://hub.docker.com/r/nvidia/k8s-device-plugin",
-                "dh nvidia/k8s-device-plugin",
-            ),
-            (
-                "https://hub.docker.com/r/nvidia/k8s-device-plugin",
-                "dh r/nvidia/k8s-device-plugin",
-            ),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_docker_hub_search() -> Result<()> {
-        let tests = [("https://hub.docker.com/search?q=test", "dh test")];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_docs_crate() -> Result<()> {
-        let tests = [
-            ("https://docs.rs/actix-web/", "docs actix-web"),
-            ("https://docs.rs/actix-web/", "docs/actix-web"),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_docs_crate_version() -> Result<()> {
-        let tests = [
-            ("https://docs.rs/actix-web/3.3.0", "docs actix-web/3.3.0"),
-            ("https://docs.rs/actix-web/3.3.0", "docs/actix-web/3.3.0"),
-            ("https://docs.rs/actix-web/3.3.0", "docs actix-web@3.3.0"),
-            ("https://docs.rs/actix-web/3.3.0", "docs/actix-web@3.3.0"),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_docs_std() -> Result<()> {
-        // this is already handled by docs.rs but doing it here removes
-        // an additional redirect
-        let tests = [
-            ("https://doc.rust-lang.org/stable/std/", "docs std"),
-            ("https://doc.rust-lang.org/stable/std/", "docs/std"),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_search() -> Result<()> {
-        let tests = [
-            ("https://duckduckgo.com/?k1=-1&q=search", "search"),
-            ("https://duckduckgo.com/?k1=-1&q=lol+donkey", "lol donkey"),
-            ("https://duckduckgo.com/?k1=-1&q=lol%2Fdonkey", "lol/donkey"),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_static_shortcuts() -> Result<()> {
-        let tests = [
-            ("https://this-week-in-rust.org/", "twir"),
-            ("https://www.abc.net.au/news", "abc"),
-            ("https://hackaday.com/blog/", "had"),
-            ("https://slashdot.org/", "sd"),
-            ("https://slashdot.org/", "/."),
-            ("https://www.servethehome.com/", "sth"),
-            ("https://xkcd.com/", "x"),
-            (
-                "https://weather.bom.gov.au/location/r3dp390-canberra",
-                "weather",
-            ),
-            ("https://github.com/", "gh"),
-            ("https://bushfire.io/", "bfio"),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_wikipedia_search() -> Result<()> {
-        let tests = [
-            (
-                "https://en.wikipedia.org/wiki/Special:Search?search=test",
-                "w test",
-            ),
-            (
-                "https://en.wikipedia.org/wiki/Special:Search?search=test%2Flol",
-                "w test/lol",
-            ),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_stackoverflow_search() -> Result<()> {
-        let tests = [
-            ("https://stackoverflow.com/search?q=search", "so search"),
-            (
-                "https://stackoverflow.com/search?q=lol+donkey",
-                "so lol donkey",
-            ),
-            (
-                "https://stackoverflow.com/search?q=lol%2Fdonkey",
-                "so lol/donkey",
-            ),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_crates_search() -> Result<()> {
-        let tests = [
-            ("https://crates.io/search?q=search", "crates search"),
-            ("https://crates.io/search?q=lol+donkey", "crates lol donkey"),
-            (
-                "https://crates.io/search?q=lol%2Fdonkey",
-                "crates lol/donkey",
-            ),
-        ];
-        run_tests(&tests)
-    }
-
-    #[test]
-    fn test_auspost_tracking() -> Result<()> {
-        let tests = [(
-            "https://auspost.com.au/mypost/track/#/details/ABC123",
-            "ap ABC123",
-        )];
-        run_tests(&tests)
     }
 }
