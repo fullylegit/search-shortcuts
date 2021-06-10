@@ -70,7 +70,19 @@ fn handle_github(query: &str) -> Result<Url> {
         } {
             url.join(user)?
         } else if query.contains('/') {
-            url.join(query)?
+            if let Some((repo, issue)) = query.split_once(' ') {
+                // github treats issues and prs the same, but this distinction
+                // prevents an unneccesary redirect
+                if let Some(issue) = issue.strip_prefix('#') {
+                    url.join(&format!("{}/issues/{}", repo, issue))?
+                } else if let Some(pr) = issue.strip_prefix("!") {
+                    url.join(&format!("{}/pull/{}", repo, pr))?
+                } else {
+                    url.join(query)?
+                }
+            } else {
+                url.join(query)?
+            }
         } else {
             let mut url = url.join("search")?;
             url.query_pairs_mut().append_pair("q", query);
@@ -192,6 +204,24 @@ mod tests {
     #[test]
     fn test_github_search() -> Result<()> {
         let tests = [("https://github.com/search?q=test", "gh test")];
+        run_tests(&tests)
+    }
+
+    #[test]
+    fn test_github_issue() -> Result<()> {
+        let tests = [(
+            "https://github.com/rust-lang/rust/issues/1",
+            "gh rust-lang/rust #1",
+        )];
+        run_tests(&tests)
+    }
+
+    #[test]
+    fn test_github_pr() -> Result<()> {
+        let tests = [(
+            "https://github.com/rust-lang/rust/pull/168",
+            "gh rust-lang/rust !168",
+        )];
         run_tests(&tests)
     }
 
