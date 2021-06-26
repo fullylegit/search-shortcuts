@@ -15,6 +15,7 @@ fn handle_static_redirects(query: &str) -> Result<Option<Url>> {
         "weather" => Url::parse("https://weather.bom.gov.au/location/r3dp390-canberra")?.into(),
         "gh" => Url::parse("https://github.com")?.into(),
         "bfio" => Url::parse("https://bushfire.io")?.into(),
+        "ip" => Url::parse("https://www.cloudflare.com/cdn-cgi/trace")?.into(),
         _ => None,
     })
 }
@@ -231,6 +232,7 @@ mod tests {
     #[test_case("https://stackoverflow.com/search?q=search", "so search")]
     #[test_case("https://crates.io/search?q=search", "crates search")]
     #[test_case("https://crates.io/search?q=lol+donkey", "crates lol donkey")]
+    #[test_case("https://www.cloudflare.com/cdn-cgi/trace", "ip")]
     fn run_tests(expected: &str, query: &str) -> Result<()> {
         let actual = query_to_url(query)?;
         assert_eq!(expected, actual.as_str(), "query: {:?}", query);
