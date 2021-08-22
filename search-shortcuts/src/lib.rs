@@ -141,6 +141,13 @@ fn handle_auspost(query: &str) -> Result<Url> {
     ))?)
 }
 
+fn handle_urban_dictionary(query: &str) -> Result<Url> {
+    Ok(Url::parse_with_params(
+        "https://www.urbandictionary.com/define.php",
+        &[("term", query)],
+    )?)
+}
+
 pub fn query_to_url(query: &str) -> Result<Url> {
     if let Some(url) = handle_static_redirects(query)? {
         return Ok(url);
@@ -168,6 +175,9 @@ pub fn query_to_url(query: &str) -> Result<Url> {
     }
     if let Some(query) = query.strip_prefix("ap ") {
         return Ok(handle_auspost(query)?);
+    }
+    if let Some(query) = query.strip_prefix("ud ") {
+        return Ok(handle_urban_dictionary(query)?);
     }
     Ok(Url::parse_with_params(
         "https://duckduckgo.com/?k1=-1",
@@ -233,6 +243,7 @@ mod tests {
     #[test_case("https://crates.io/search?q=search", "crates search")]
     #[test_case("https://crates.io/search?q=lol+donkey", "crates lol donkey")]
     #[test_case("https://www.cloudflare.com/cdn-cgi/trace", "ip")]
+    #[test_case("https://www.urbandictionary.com/define.php?term=test", "ud test")]
     fn run_tests(expected: &str, query: &str) -> Result<()> {
         let actual = query_to_url(query)?;
         assert_eq!(expected, actual.as_str(), "query: {:?}", query);
