@@ -28,10 +28,8 @@ fn handle_docs(query: &str) -> Result<Url> {
         if let Some((crate_, version)) = {
             let sep_idx = if let Some(sep_idx) = query.find('/') {
                 Some(sep_idx)
-            } else if let Some(sep_idx) = query.find('@') {
-                Some(sep_idx)
             } else {
-                None
+                query.find('@')
             };
             if let Some(sep_idx) = sep_idx {
                 let (crate_, version) = query.split_at(sep_idx);
@@ -63,10 +61,8 @@ fn handle_github(query: &str) -> Result<Url> {
         if let Some(user) = {
             if let Some(query) = query.strip_prefix('@') {
                 Some(query)
-            } else if let Some(query) = query.strip_prefix("u/") {
-                Some(query)
             } else {
-                None
+                query.strip_prefix("u/")
             }
         } {
             url.join(user)?
@@ -76,7 +72,7 @@ fn handle_github(query: &str) -> Result<Url> {
                 // prevents an unneccesary redirect
                 if let Some(issue) = issue.strip_prefix('#') {
                     url.join(&format!("{}/issues/{}", repo, issue))?
-                } else if let Some(pr) = issue.strip_prefix("!") {
+                } else if let Some(pr) = issue.strip_prefix('!') {
                     url.join(&format!("{}/pull/{}", repo, pr))?
                 } else {
                     url.join(query)?
@@ -153,31 +149,31 @@ pub fn query_to_url(query: &str) -> Result<Url> {
         return Ok(url);
     }
     if let Some(query) = query.strip_prefix("docs ") {
-        return Ok(handle_docs(query)?);
+        return handle_docs(query);
     }
     if let Some(query) = query.strip_prefix("docs/") {
-        return Ok(handle_docs(query)?);
+        return handle_docs(query);
     }
     if let Some(query) = query.strip_prefix("gh ") {
-        return Ok(handle_github(query)?);
+        return handle_github(query);
     }
     if let Some(query) = query.strip_prefix("w ") {
-        return Ok(handle_wikipedia(query)?);
+        return handle_wikipedia(query);
     }
     if let Some(query) = query.strip_prefix("so ") {
-        return Ok(handle_stackoverflow(query)?);
+        return handle_stackoverflow(query);
     }
     if let Some(query) = query.strip_prefix("dh ") {
-        return Ok(handle_docker_hub(query)?);
+        return handle_docker_hub(query);
     }
     if let Some(query) = query.strip_prefix("crates ") {
-        return Ok(handle_crates(query)?);
+        return handle_crates(query);
     }
     if let Some(query) = query.strip_prefix("ap ") {
-        return Ok(handle_auspost(query)?);
+        return handle_auspost(query);
     }
     if let Some(query) = query.strip_prefix("ud ") {
-        return Ok(handle_urban_dictionary(query)?);
+        return handle_urban_dictionary(query);
     }
     Ok(Url::parse_with_params(
         "https://duckduckgo.com/?k1=-1",

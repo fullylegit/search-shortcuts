@@ -19,7 +19,7 @@ struct Args {
 async fn index(args: Query<Args>) -> Result<HttpResponse> {
     Ok(match &args.q {
         Some(query) => {
-            let redirect_url = query_to_url(&query)?;
+            let redirect_url = query_to_url(query)?;
             HttpResponse::SeeOther()
                 .header("Location", redirect_url.as_str())
                 .finish()

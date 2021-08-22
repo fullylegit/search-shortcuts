@@ -80,19 +80,19 @@ struct Args {
 fn osdf() -> Result<Response> {
     let headers = default_headers()?;
     headers.set("Content-Type", "application/opensearchdescription+xml")?;
-    Ok(Response::new_with_opt_str_and_init(
+    Response::new_with_opt_str_and_init(
         Some(include_str!("../../resources/osdf.xml")),
         ResponseInit::new().status(200).headers(&headers),
-    )?)
+    )
 }
 
 fn index() -> Result<Response> {
     let headers = default_headers()?;
     headers.set("Content-Type", "text/html")?;
-    Ok(Response::new_with_opt_str_and_init(
+    Response::new_with_opt_str_and_init(
         Some(include_str!("../../resources/index.html")),
         ResponseInit::new().status(200).headers(&headers),
-    )?)
+    )
 }
 
 fn redirect(query: &str) -> Result<Response> {
@@ -104,10 +104,10 @@ fn redirect(query: &str) -> Result<Response> {
             let redirect_url = query_to_url(&query)
                 .map_err(|err| format!("Failed to get redirect url: {:?}", err))?;
             headers.set("Location", redirect_url.as_str())?;
-            return Ok(Response::new_with_opt_str_and_init(
+            return Response::new_with_opt_str_and_init(
                 None,
                 ResponseInit::new().status(303).headers(&headers),
-            )?);
+            );
         }
         None => index(),
     }
