@@ -3,19 +3,14 @@ mod utils;
 use itertools::Itertools;
 use search_shortcuts::query_to_url;
 use serde::Deserialize;
-use url::Url;
-use wasm_bindgen::prelude::*;
-use web_sys::*;
+use worker::*;
 
-// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-// allocator.
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+#[derive(Debug, Deserialize)]
+struct Args {
+    q: Option<String>,
+}
 
-type Result<T, E = JsValue> = std::result::Result<T, E>;
-
-fn default_headers() -> Result<Headers, JsValue> {
+fn default_headers(content_type: Option<&str>) -> Result<Headers> {
     let features = [
         "accelerometer",
         "ambient-light-sensor",
@@ -54,7 +49,7 @@ fn default_headers() -> Result<Headers, JsValue> {
         .map(|feature| format!("{} 'none'", feature))
         .join("; ");
 
-    let headers = Headers::new()?;
+    let mut headers = Headers::new();
     headers.set("Referrer-Policy", "no-referrer")?;
     headers.set("X-XSS-Protection", "1; mode=block")?;
     headers.set("X-Frame-Options", "DENY")?;
@@ -69,30 +64,12 @@ fn default_headers() -> Result<Headers, JsValue> {
     headers.set("Cross-Origin-Embedder-Policy", "require-corp")?;
     headers.set("Cross-Origin-Resource-Policy", "cross-origin")?;
     headers.set("Cross-Origin-Opener-Policy", "same-origin")?;
+
+    if let Some(content_type) = content_type {
+        headers.set("Content-Type", content_type)?;
+    }
+
     Ok(headers)
-}
-
-#[derive(Debug, Deserialize)]
-struct Args {
-    q: Option<String>,
-}
-
-fn osdf() -> Result<Response> {
-    let headers = default_headers()?;
-    headers.set("Content-Type", "application/opensearchdescription+xml")?;
-    Response::new_with_opt_str_and_init(
-        Some(include_str!("../../resources/osdf.xml")),
-        ResponseInit::new().status(200).headers(&headers),
-    )
-}
-
-fn index() -> Result<Response> {
-    let headers = default_headers()?;
-    headers.set("Content-Type", "text/html")?;
-    Response::new_with_opt_str_and_init(
-        Some(include_str!("../../resources/index.html")),
-        ResponseInit::new().status(200).headers(&headers),
-    )
 }
 
 fn redirect(query: &str) -> Result<Response> {
@@ -100,37 +77,52 @@ fn redirect(query: &str) -> Result<Response> {
         .map_err(|err| format!("Failed to parse query string: {:?}", err))?;
     match args.q {
         Some(query) => {
-            let headers = default_headers()?;
-            let redirect_url = query_to_url(&query)
-                .map_err(|err| format!("Failed to get redirect url: {:?}", err))?;
-            headers.set("Location", redirect_url.as_str())?;
-            return Response::new_with_opt_str_and_init(
-                None,
-                ResponseInit::new().status(303).headers(&headers),
-            );
+            let headers = {
+                let mut headers = default_headers(None)?;
+                let redirect_url = query_to_url(&query)
+                    .map_err(|err| format!("Failed to get redirect url: {:?}", err))?;
+                headers.set("Location", redirect_url.as_str())?;
+                headers
+            };
+            Ok(Response::empty()?.with_status(303).with_headers(headers))
         }
-        None => index(),
+        None => index_page(),
     }
 }
 
-#[wasm_bindgen]
-pub async fn handle_request(request: Request) -> Result<Response> {
-    utils::set_panic_hook();
-    let url = Url::parse(&request.url())
-        .map_err(|err| format!("Failed to parse request url: {:?}", err))?;
+fn index_page() -> Result<Response> {
+    let headers = default_headers(Some("text/html"))?;
+    Ok(Response::from_html(include_str!("../../resources/index.html"))?.with_headers(headers))
+}
 
-    match url.path() {
-        "/" => match url.query() {
-            Some(query) => redirect(query),
-            None => index(),
-        },
-        "/osdf.xml" => osdf(),
-        _ => {
-            let headers = default_headers()?;
-            Response::new_with_opt_str_and_init(
-                None,
-                ResponseInit::new().status(404).headers(&headers),
-            )
-        }
+fn osdf(_req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+    let headers = default_headers(Some("application/opensearchdescription+xml"))?;
+    Ok(Response::from_html(include_str!("../../resources/osdf.xml"))?.with_headers(headers))
+}
+
+fn index(req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+    match req.url()?.query() {
+        Some(query) => redirect(query),
+        None => index_page(),
     }
+}
+
+#[event(fetch)]
+pub async fn main(req: Request, env: Env) -> Result<Response> {
+    // Optionally, get more helpful error messages written to the console in the case of a panic.
+    utils::set_panic_hook();
+
+    // Optionally, use the Router to handle matching endpoints, use ":name" placeholders, or "*name"
+    // catch-alls to match on specific patterns. The Router takes some data with its `new` method
+    // that can be shared throughout all routes. If you don't need any shared data, use `()`.
+    let router = Router::new(());
+
+    // Add as many routes as your Worker needs! Each route will get a `Request` for handling HTTP
+    // functionality and a `RouteContext` which you can use to  and get route parameters and
+    // Enviornment bindings like KV Stores, Durable Objects, Secrets, and Variables.
+    router
+        .get("/", index)
+        .get("/osdf.xml", osdf)
+        .run(req, env)
+        .await
 }
