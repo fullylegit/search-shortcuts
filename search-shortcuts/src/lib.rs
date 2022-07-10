@@ -17,6 +17,7 @@ fn handle_static_redirects(query: &str) -> Result<Option<Url>> {
         "bfio" => Url::parse("https://bushfire.io")?.into(),
         "ip" => Url::parse("https://www.cloudflare.com/cdn-cgi/trace")?.into(),
         "core" => Url::parse("https://www.core-electronics.com.au")?.into(),
+        "bt" => Url::parse("https://www.booktopia.com.au/")?.into(),
         _ => None,
     })
 }
@@ -145,6 +146,14 @@ fn handle_urban_dictionary(query: &str) -> Result<Url> {
     )?)
 }
 
+fn handle_booktopia(query: &str) -> Result<Url> {
+    const BOOKS: &str = "917504";
+    Ok(Url::parse_with_params(
+        "https://www.booktopia.com.au/search.ep",
+        &[("keywords", query), ("productType", BOOKS)],
+    )?)
+}
+
 pub fn query_to_url(query: &str) -> Result<Url> {
     if let Some(url) = handle_static_redirects(query)? {
         return Ok(url);
@@ -175,6 +184,9 @@ pub fn query_to_url(query: &str) -> Result<Url> {
     }
     if let Some(query) = query.strip_prefix("ud ") {
         return handle_urban_dictionary(query);
+    }
+    if let Some(query) = query.strip_prefix("bt ") {
+        return handle_booktopia(query);
     }
     Ok(Url::parse_with_params(
         "https://duckduckgo.com/?k1=-1",
@@ -242,6 +254,11 @@ mod tests {
     #[test_case("https://www.cloudflare.com/cdn-cgi/trace", "ip")]
     #[test_case("https://www.urbandictionary.com/define.php?term=test", "ud test")]
     #[test_case("https://www.core-electronics.com.au/", "core")]
+    #[test_case("https://www.booktopia.com.au/", "bt")]
+    #[test_case(
+        "https://www.booktopia.com.au/search.ep?keywords=lol+donkey&productType=917504",
+        "bt lol donkey"
+    )]
     fn run_tests(expected: &str, query: &str) -> Result<()> {
         let actual = query_to_url(query)?;
         assert_eq!(expected, actual.as_str(), "query: {:?}", query);
