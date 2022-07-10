@@ -108,14 +108,14 @@ fn index(req: Request, _ctx: RouteContext<()>) -> Result<Response> {
 }
 
 #[event(fetch)]
-pub async fn main(req: Request, env: Env) -> Result<Response> {
+pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     // Optionally, get more helpful error messages written to the console in the case of a panic.
     utils::set_panic_hook();
 
     // Optionally, use the Router to handle matching endpoints, use ":name" placeholders, or "*name"
     // catch-alls to match on specific patterns. The Router takes some data with its `new` method
     // that can be shared throughout all routes. If you don't need any shared data, use `()`.
-    let router = Router::new(());
+    let router = Router::new();
 
     // Add as many routes as your Worker needs! Each route will get a `Request` for handling HTTP
     // functionality and a `RouteContext` which you can use to  and get route parameters and

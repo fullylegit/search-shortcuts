@@ -9,4 +9,4 @@ thiserror = "1.0.22"
 url = "2.2.0"
 
 [dev-dependencies]
-test-case = "1.1.0"
+test-case = "2.1.0"

@@ -21,7 +21,7 @@ async fn index(args: Query<Args>) -> Result<HttpResponse> {
         Some(query) => {
             let redirect_url = query_to_url(query)?;
             HttpResponse::SeeOther()
-                .header("Location", redirect_url.as_str())
+                .append_header(("Location", redirect_url.as_str()))
                 .finish()
         }
         None => HttpResponse::Ok()
@@ -108,20 +108,20 @@ fn default_headers() -> DefaultHeaders {
         .join("; ");
 
     DefaultHeaders::new()
-        .header("Referrer-Policy", "no-referrer")
-        .header("X-XSS-Protection", "1; mode=block")
-        .header("X-Frame-Options", "DENY")
-        .header("X-Content-Type-Options", "nosniff")
-        .header("Feature-Policy", &disabled_features)
-        .header("Permissions-Policy", &disabled_features)
-        .header("Content-Security-Policy", "default-src 'self'")
-        .header("Cross-Origin-Embedder-Policy", "require-corp")
-        .header("Cross-Origin-Resource-Policy", "cross-origin")
-        .header("Cross-Origin-Opener-Policy", "same-origin")
-        .header(
+        .add(("Referrer-Policy", "no-referrer"))
+        .add(("X-XSS-Protection", "1; mode=block"))
+        .add(("X-Frame-Options", "DENY"))
+        .add(("X-Content-Type-Options", "nosniff"))
+        .add(("Feature-Policy", disabled_features.as_str()))
+        .add(("Permissions-Policy", disabled_features.as_str()))
+        .add(("Content-Security-Policy", "default-src 'self'"))
+        .add(("Cross-Origin-Embedder-Policy", "require-corp"))
+        .add(("Cross-Origin-Resource-Policy", "cross-origin"))
+        .add(("Cross-Origin-Opener-Policy", "same-origin"))
+        .add((
             "Strict-Transport-Security",
             "max-age=63072000; includeSubDomains; preload ",
-        )
+        ))
 }
 
 fn init_logging() {
