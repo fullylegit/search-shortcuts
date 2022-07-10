@@ -154,6 +154,13 @@ fn handle_booktopia(query: &str) -> Result<Url> {
     )?)
 }
 
+fn handle_core(query: &str) -> Result<Url> {
+    Ok(Url::parse_with_params(
+        "https://core-electronics.com.au/catalogsearch/result/",
+        &[("q", query)],
+    )?)
+}
+
 pub fn query_to_url(query: &str) -> Result<Url> {
     if let Some(url) = handle_static_redirects(query)? {
         return Ok(url);
@@ -187,6 +194,9 @@ pub fn query_to_url(query: &str) -> Result<Url> {
     }
     if let Some(query) = query.strip_prefix("bt ") {
         return handle_booktopia(query);
+    }
+    if let Some(query) = query.strip_prefix("core ") {
+        return handle_core(query);
     }
     Ok(Url::parse_with_params(
         "https://duckduckgo.com/?k1=-1",
@@ -254,6 +264,10 @@ mod tests {
     #[test_case("https://www.cloudflare.com/cdn-cgi/trace", "ip")]
     #[test_case("https://www.urbandictionary.com/define.php?term=test", "ud test")]
     #[test_case("https://www.core-electronics.com.au/", "core")]
+    #[test_case(
+        "https://core-electronics.com.au/catalogsearch/result/?q=lol+donkey",
+        "core lol donkey"
+    )]
     #[test_case("https://www.booktopia.com.au/", "bt")]
     #[test_case(
         "https://www.booktopia.com.au/search.ep?keywords=lol+donkey&productType=917504",
