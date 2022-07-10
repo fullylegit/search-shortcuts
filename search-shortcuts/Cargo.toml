@@ -2,7 +2,7 @@
 name = "search-shortcuts"
 version = "0.1.0"
 authors = ["user <40304161+fullylegit@users.noreply.github.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 thiserror = "1.0.22"

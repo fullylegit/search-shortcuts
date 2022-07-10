@@ -1,3 +1,2 @@
 [workspace]
 members = ["search-shortcuts", "server", "worker"]
-
