@@ -1,10 +1,14 @@
 pub mod errors;
 use errors::Result;
 
+use psl::{List, Psl};
 use url::Url;
 
 fn handle_static_redirects(query: &str) -> Result<Option<Url>> {
-    Ok(match query {
+    // this is to handle autocomplete on mobile; ie matching "weather"
+    // when the input is "Weather "
+    let query = query.trim().to_lowercase();
+    Ok(match query.as_str() {
         "twir" => Url::parse("https://this-week-in-rust.org")?.into(),
         "abc" => Url::parse("https://www.abc.net.au/news")?.into(),
         "had" => Url::parse("https://hackaday.com/blog/")?.into(),
@@ -18,6 +22,8 @@ fn handle_static_redirects(query: &str) -> Result<Option<Url>> {
         "ip" => Url::parse("https://www.cloudflare.com/cdn-cgi/trace")?.into(),
         "core" => Url::parse("https://www.core-electronics.com.au")?.into(),
         "bt" => Url::parse("https://www.booktopia.com.au/")?.into(),
+        "speed" => Url::parse("https://speed.cloudflare.com/")?.into(),
+        "ce" => Url::parse("https://www.carexpert.com.au/car-news")?.into(),
         _ => None,
     })
 }
@@ -161,6 +167,17 @@ fn handle_core(query: &str) -> Result<Url> {
     )?)
 }
 
+fn handle_autocomplete_url(query: &str) -> Result<Url> {
+    Ok(Url::parse(&format!("https://{}", query.replace(' ', "")))?)
+}
+
+fn handle_npm(query: &str) -> Result<Url> {
+    Ok(Url::parse_with_params(
+        "https://www.npmjs.com/search",
+        &[("q", query)],
+    )?)
+}
+
 pub fn query_to_url(query: &str) -> Result<Url> {
     if let Some(url) = handle_static_redirects(query)? {
         return Ok(url);
@@ -197,6 +214,17 @@ pub fn query_to_url(query: &str) -> Result<Url> {
     }
     if let Some(query) = query.strip_prefix("core ") {
         return handle_core(query);
+    }
+    if let Some(query) = query.strip_prefix("npm ") {
+        return handle_npm(query);
+    }
+    if query.contains(' ')
+        && List
+            .domain(query.replace(' ', "").as_bytes())
+            .map(|d| d.suffix().is_known())
+            .unwrap_or(false)
+    {
+        return handle_autocomplete_url(query);
     }
     Ok(Url::parse_with_params(
         "https://duckduckgo.com/?k1=-1",
@@ -273,6 +301,17 @@ mod tests {
         "https://www.booktopia.com.au/search.ep?keywords=lol+donkey&productType=917504",
         "bt lol donkey"
     )]
+    #[test_case("https://duckduckgo.com/?k1=-1&q=www.example.com", "www.example.com")]
+    #[test_case("https://www.example.com/", "www.example. com")]
+    #[test_case("https://weather.bom.gov.au/location/r3dp390-canberra", "Weather " ; "keyword caps with trailing space")]
+    #[test_case("https://weather.bom.gov.au/location/r3dp390-canberra", "Weather" ; "keyword caps")]
+    #[test_case("https://weather.bom.gov.au/location/r3dp390-canberra", "weather " ; "keyword with trailing space")]
+    #[test_case("https://duckduckgo.com/?k1=-1&q=Donkey+", "Donkey " ; "search caps with trailing space")]
+    #[test_case("https://duckduckgo.com/?k1=-1&q=Donkey", "Donkey" ; "search caps")]
+    #[test_case("https://duckduckgo.com/?k1=-1&q=donkey+", "donkey " ; "search with trailing space")]
+    #[test_case("https://duckduckgo.com/?k1=-1&q=802.11p+adapters", "802.11p adapters")]
+    #[test_case("https://www.npmjs.com/search?q=rollup", "npm rollup")]
+    #[test_case("https://www.carexpert.com.au/car-news", "ce")]
     fn run_tests(expected: &str, query: &str) -> Result<()> {
         let actual = query_to_url(query)?;
         assert_eq!(expected, actual.as_str(), "query: {:?}", query);
