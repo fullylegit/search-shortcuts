@@ -1,24 +1,15 @@
 name = "search-shortcuts"
-type = "javascript"
 account_id = "5b7e0a3aca26fcb4f1b44582f1853360"
 workers_dev = false
 route = "search.fullylegit.dev/*"
-zone_id = "2f38598872fd42f1fdfaf1462099f839"
 compatibility_date = "2021-08-27" # required
 compatibility_flags = [ "formdata_parser_supports_files" ] # required
-
-[vars]
-WORKERS_RS_VERSION = "0.0.4"
+main   = "build/worker/shim.mjs"
 
 [build]
 command = "cargo install -q worker-build && worker-build --release" # required
 
-[build.upload]
-dir    = "build/worker"
-format = "modules"
-main   = "./shim.mjs"
-
-[[build.upload.rules]]
+[[rules]]
 globs = ["**/*.wasm"]
 type  = "CompiledWasm"
 
