@@ -5,10 +5,10 @@ authors = ["user <40304161+fullylegit@users.noreply.github.com>"]
 edition = "2021"
 
 [dependencies]
-actix-web = { version = "4.1.0", features = ["openssl"] }
-env_logger = "0.9.0"
-itertools = "0.10.3"
-openssl = "0.10.30"
+actix-web = { version = "4.5.1", features = ["openssl"] }
+env_logger = "0.11.3"
+itertools = "0.12.1"
+openssl = "0.10.64"
 search-shortcuts = { path = "../search-shortcuts/" }
-serde = { version = "1.0.117", features = ["derive"] }
-thiserror = "1.0.22"
+serde = { version = "1.0.197", features = ["derive"] }
+thiserror = "1.0.58"
