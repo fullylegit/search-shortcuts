@@ -24,6 +24,7 @@ fn handle_static_redirects(query: &str) -> Result<Option<Url>> {
         "bt" => Url::parse("https://www.booktopia.com.au/")?.into(),
         "speed" => Url::parse("https://speed.cloudflare.com/")?.into(),
         "ce" => Url::parse("https://www.carexpert.com.au/car-news")?.into(),
+        "t" => Url::parse("https://www.twitch.tv/")?.into(),
         _ => None,
     })
 }
@@ -178,6 +179,13 @@ fn handle_npm(query: &str) -> Result<Url> {
     )?)
 }
 
+fn handle_twitch(query: &str) -> Result<Url> {
+    Ok(match query.strip_prefix('@') {
+        Some(user) => Url::parse("https://www.twitch.tv/")?.join(user)?,
+        None => Url::parse_with_params("https://www.twitch.tv/search", &[("term", query)])?,
+    })
+}
+
 pub fn query_to_url(query: &str) -> Result<Url> {
     if let Some(url) = handle_static_redirects(query)? {
         return Ok(url);
@@ -217,6 +225,9 @@ pub fn query_to_url(query: &str) -> Result<Url> {
     }
     if let Some(query) = query.strip_prefix("npm ") {
         return handle_npm(query);
+    }
+    if let Some(query) = query.strip_prefix("t ") {
+        return handle_twitch(query);
     }
     if query.contains(' ')
         && List
@@ -312,6 +323,9 @@ mod tests {
     #[test_case("https://duckduckgo.com/?k1=-1&q=802.11p+adapters", "802.11p adapters")]
     #[test_case("https://www.npmjs.com/search?q=rollup", "npm rollup")]
     #[test_case("https://www.carexpert.com.au/car-news", "ce")]
+    #[test_case("https://www.twitch.tv/", "t")]
+    #[test_case("https://www.twitch.tv/fasffy", "t @fasffy")]
+    #[test_case("https://www.twitch.tv/search?term=search", "t search")]
     fn run_tests(expected: &str, query: &str) -> Result<()> {
         let actual = query_to_url(query)?;
         assert_eq!(expected, actual.as_str(), "query: {:?}", query);
