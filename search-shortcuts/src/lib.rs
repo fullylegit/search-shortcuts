@@ -16,7 +16,7 @@ fn handle_static_redirects(query: &str) -> Result<Option<Url>> {
         "/." => Url::parse("https://slashdot.org")?.into(),
         "sth" => Url::parse("https://www.servethehome.com")?.into(),
         "x" => Url::parse("https://xkcd.com")?.into(),
-        "weather" => Url::parse("https://weather.bom.gov.au/location/r3dp390-canberra")?.into(),
+        "weather" => Url::parse("https://beta.bom.gov.au/poi-location/australia/australian-capital-territory/australian-capital-territory/nsw_pt027-canberra")?.into(),
         "gh" => Url::parse("https://github.com")?.into(),
         "bfio" => Url::parse("https://bushfire.io")?.into(),
         "ip" => Url::parse("https://www.cloudflare.com/cdn-cgi/trace")?.into(),
